@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sentiment Fusion AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">Sentiment<span>Fusion</span></div>
+            <span class="badge">ML v3 · TEXT + IMAGE</span>
+        </header>
+
+        <main>
+            <!-- HERO -->
+            <div class="hero">
+                <h1>Phân tích cảm xúc<br /><em>đa phương thức</em></h1>
+                <p>
+                    Kết hợp mô hình Text (TF-IDF + HOG), Image (Ensemble ML) và
+                    Fusion để dự đoán cảm xúc chính xác hơn.
+                </p>
+            </div>
+
+            <!-- API URL -->
+            <div class="section-label">Cấu hình API</div>
+            <div class="api-field">
+                <div style="flex: 1">
+                    <label for="apiUrl">HuggingFace Spaces / ngrok URL</label>
+                    <input
+                        id="apiUrl"
+                        type="text"
+                        placeholder="https://your-space.hf.space/predict"
+                        value=""
+                    />
+                </div>
+            </div>
+
+            <!-- INPUT FORM -->
+            <div class="section-label">Đầu vào phân tích</div>
+            <div class="form-grid">
+                <div class="field-wrap">
+                    <span class="field-label">Văn bản</span>
+                    <textarea
+                        id="textInput"
+                        placeholder="Nhập nội dung cần phân tích cảm xúc..."
+                    ></textarea>
+                </div>
+                <div class="field-wrap">
+                    <span class="field-label">Hình ảnh</span>
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" accept="image/*" />
+                        <div class="drop-inner" id="dropInner">
+                            <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#c8f135"
+                                stroke-width="1.5"
+                            >
+                                <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="3"
+                                />
+                                <path d="M12 8v8M8 12l4-4 4 4" />
+                            </svg>
+                            <p>Kéo thả hoặc click để chọn ảnh</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status" class="status"></div>
+            <button class="btn-run" id="runBtn">Phân tích ngay</button>
+
+            <!-- RESULTS SECTION -->
+            <div id="results" class="hidden">
+                <!-- Fusion result pill -->
+                <div class="section-label">Kết quả tổng hợp</div>
+                <div class="result-header">
+                    <span class="result-pill" id="resultPill">—</span>
+                    <span class="conf-text" id="confText"></span>
+                </div>
+
+                <!-- 3-column breakdown -->
+                <div class="breakdown-grid">
+                    <!-- TEXT -->
+                    <div class="bcard">
+                        <h3>Text model</h3>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Positive</span
+                                ><span class="brow-val pos" id="tp"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill pos"
+                                    id="tp-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Neutral</span
+                                ><span class="brow-val neu" id="tn"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neu"
+                                    id="tn-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Negative</span
+                                ><span class="brow-val neg" id="tng"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neg"
+                                    id="tng-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                margin-top: 0.75rem;
+                                font-size: 0.72rem;
+                                color: var(--muted);
+                            "
+                        >
+                            Dự đoán:
+                            <span
+                                id="text-pred"
+                                style="color: var(--text); font-weight: 500"
+                            ></span>
+                        </div>
+                    </div>
+                    <!-- IMAGE -->
+                    <div class="bcard">
+                        <h3>Image model</h3>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Positive</span
+                                ><span class="brow-val pos" id="ip"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill pos"
+                                    id="ip-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Neutral</span
+                                ><span class="brow-val neu" id="in"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neu"
+                                    id="in-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Negative</span
+                                ><span class="brow-val neg" id="ing"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neg"
+                                    id="ing-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                margin-top: 0.75rem;
+                                font-size: 0.72rem;
+                                color: var(--muted);
+                            "
+                        >
+                            Dự đoán:
+                            <span
+                                id="image-pred"
+                                style="color: var(--text); font-weight: 500"
+                            ></span>
+                        </div>
+                    </div>
+                    <!-- FUSION -->
+                    <div class="bcard" style="border-color: #c8f13540">
+                        <h3>Fusion model</h3>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Positive</span
+                                ><span class="brow-val pos" id="fp"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill pos"
+                                    id="fp-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Neutral</span
+                                ><span class="brow-val neu" id="fn"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neu"
+                                    id="fn-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="brow">
+                            <div class="brow-top">
+                                <span class="brow-label">Negative</span
+                                ><span class="brow-val neg" id="fng"></span>
+                            </div>
+                            <div class="bbar">
+                                <div
+                                    class="bbar-fill neg"
+                                    id="fng-bar"
+                                    style="width: 0%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                margin-top: 0.75rem;
+                                font-size: 0.72rem;
+                                color: var(--muted);
+                            "
+                        >
+                            Kết quả:
+                            <span
+                                id="fusion-pred"
+                                style="color: var(--accent); font-weight: 700"
+                            ></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODEL METRICS SECTION -->
+                <div class="divider"></div>
+                <div class="section-label">Chỉ số đánh giá mô hình</div>
+                <p class="chart-section-title">
+                    So sánh hiệu suất <span>3 mô hình</span>
+                </p>
+
+                <div class="charts-3-grid">
+                    <!-- TEXT MODEL METRICS -->
+                    <div class="cchart">
+                        <h3>Text model</h3>
+                        <div class="sub">TF-IDF + Logistic Regression</div>
+                        <div class="metric-row">
+                            <span class="mlabel">Accuracy</span
+                            ><span class="mval" style="color: var(--pos)"
+                                >87.3%</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c1"
+                                style="width: 87.3%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">F1-score</span
+                            ><span class="mval" style="color: var(--pos)"
+                                >0.864</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c1"
+                                style="width: 86.4%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Precision</span
+                            ><span class="mval" style="color: var(--pos)"
+                                >0.871</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c1"
+                                style="width: 87.1%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Recall</span
+                            ><span class="mval" style="color: var(--pos)"
+                                >0.858</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c1"
+                                style="width: 85.8%"
+                            ></div>
+                        </div>
+                        <div class="mpl-wrap">
+                            <div class="mpl-label">Biểu đồ matplotlib</div>
+                            <div class="mpl-slot" id="mpl-text">
+                                <div class="mpl-placeholder-inner">
+                                    <svg
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.2"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
+                                        <path d="M3 9h18M9 21V9" />
+                                    </svg>
+                                    <span>chart_text.png</span>
+                                </div>
+                                <img id="mpl-text-img" alt="Text model chart" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IMAGE MODEL METRICS -->
+                    <div class="cchart">
+                        <h3>Image model</h3>
+                        <div class="sub">HOG + LBP + Ensemble</div>
+                        <div class="metric-row">
+                            <span class="mlabel">Accuracy</span
+                            ><span class="mval" style="color: var(--neu)"
+                                >79.1%</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c2"
+                                style="width: 79.1%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">F1-score</span
+                            ><span class="mval" style="color: var(--neu)"
+                                >0.783</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c2"
+                                style="width: 78.3%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Precision</span
+                            ><span class="mval" style="color: var(--neu)"
+                                >0.794</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c2"
+                                style="width: 79.4%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Recall</span
+                            ><span class="mval" style="color: var(--neu)"
+                                >0.772</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c2"
+                                style="width: 77.2%"
+                            ></div>
+                        </div>
+                        <div class="mpl-wrap">
+                            <div class="mpl-label">Biểu đồ matplotlib</div>
+                            <div class="mpl-slot" id="mpl-image">
+                                <div class="mpl-placeholder-inner">
+                                    <svg
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.2"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
+                                        <path d="M3 9h18M9 21V9" />
+                                    </svg>
+                                    <span>chart_image.png</span>
+                                </div>
+                                <img
+                                    id="mpl-image-img"
+                                    alt="Image model chart"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FUSION MODEL METRICS -->
+                    <div class="cchart" style="border-color: #f7b73140">
+                        <h3>Fusion model</h3>
+                        <div class="sub">Meta-stacking · Text + Image</div>
+                        <div class="metric-row">
+                            <span class="mlabel">Accuracy</span
+                            ><span class="mval" style="color: var(--accent3)"
+                                >91.7%</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c3"
+                                style="width: 91.7%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">F1-score</span
+                            ><span class="mval" style="color: var(--accent3)"
+                                >0.912</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c3"
+                                style="width: 91.2%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Precision</span
+                            ><span class="mval" style="color: var(--accent3)"
+                                >0.918</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c3"
+                                style="width: 91.8%"
+                            ></div>
+                        </div>
+                        <div class="metric-row">
+                            <span class="mlabel">Recall</span
+                            ><span class="mval" style="color: var(--accent3)"
+                                >0.906</span
+                            >
+                        </div>
+                        <div class="mbar-wrap">
+                            <div
+                                class="mbar-fill c3"
+                                style="width: 90.6%"
+                            ></div>
+                        </div>
+                        <div class="mpl-wrap">
+                            <div class="mpl-label">Biểu đồ matplotlib</div>
+                            <div class="mpl-slot" id="mpl-fusion">
+                                <div class="mpl-placeholder-inner">
+                                    <svg
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.2"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
+                                        <path d="M3 9h18M9 21V9" />
+                                    </svg>
+                                    <span>chart_fusion.png</span>
+                                </div>
+                                <img
+                                    id="mpl-fusion-img"
+                                    alt="Fusion model chart"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            Sentiment Fusion AI &nbsp;·&nbsp; Text + Image + Fusion
+            &nbsp;·&nbsp; Built with FastAPI + scikit-learn
+        </footer>
+
+        <script>
+            // ─── MATPLOTLIB IMAGE LOADER ─────────────────────────────────────────────────
+            // Khi API trả về chart_text_b64, chart_image_b64, chart_fusion_b64
+            // (base64 PNG từ matplotlib), gọi hàm này để hiển thị vào slot tương ứng.
+            //
+            // Cách dùng trong Python/FastAPI:
+            //   import base64, io, matplotlib.pyplot as plt
+            //   buf = io.BytesIO()
+            //   fig.savefig(buf, format='png', bbox_inches='tight')
+            //   buf.seek(0)
+            //   chart_b64 = base64.b64encode(buf.read()).decode()
+            //   # trả về trong JSON: { "chart_text_b64": chart_b64, ... }
+
+            function loadMplChart(slotId, imgId, b64data) {
+                if (!b64data) return;
+                const slot = document.getElementById(slotId);
+                const img = document.getElementById(imgId);
+                if (!slot || !img) return;
+                img.src = "data:image/png;base64," + b64data;
+                slot.classList.add("loaded");
+            }
+
+            // ─── FILE UPLOAD ─────────────────────────────────────────────────────────────
+            const fileInput = document.getElementById("fileInput");
+            const dropZone = document.getElementById("dropZone");
+            const dropInner = document.getElementById("dropInner");
+
+            fileInput.addEventListener("change", () => {
+                const f = fileInput.files[0];
+                if (!f) return;
+                const url = URL.createObjectURL(f);
+                dropZone.classList.add("has-image");
+                let img = dropZone.querySelector("img.preview");
+                if (!img) {
+                    img = document.createElement("img");
+                    img.className = "preview";
+                    dropZone.insertBefore(img, dropInner);
+                }
+                img.src = url;
+                dropInner.querySelector("p").textContent = f.name;
+            });
+
+            // ─── API CALL ─────────────────────────────────────────────────────────────────
+            const runBtn = document.getElementById("runBtn");
+            const status = document.getElementById("status");
+            const results = document.getElementById("results");
+
+            function setBar(id, val) {
+                const el = document.getElementById(id);
+                if (el) el.style.width = (val * 100).toFixed(1) + "%";
+            }
+            function setPct(id, val) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = (val * 100).toFixed(1) + "%";
+            }
+            function showStatus(msg, type) {
+                status.textContent = msg;
+                status.className = "status " + type;
+            }
+            function hideStatus() {
+                status.className = "status";
+            }
+
+            runBtn.addEventListener("click", async () => {
+                const text = document.getElementById("textInput").value.trim();
+                const file = fileInput.files[0];
+                const apiUrl = document.getElementById("apiUrl").value.trim();
+
+                if (!text) {
+                    showStatus("Vui lòng nhập văn bản cần phân tích.", "error");
+                    return;
+                }
+                if (!file) {
+                    showStatus("Vui lòng chọn ảnh để phân tích.", "error");
+                    return;
+                }
+                if (!apiUrl) {
+                    showStatus(
+                        "Vui lòng nhập API URL (HuggingFace Spaces hoặc ngrok).",
+                        "error",
+                    );
+                    return;
+                }
+
+                runBtn.disabled = true;
+                showStatus(
+                    "Đang phân tích... vui lòng chờ trong giây lát.",
+                    "loading",
+                );
+                results.classList.add("hidden");
+
+                try {
+                    const fd = new FormData();
+                    fd.append("text", text);
+                    fd.append("file", file);
+
+                    const res = await fetch(apiUrl, {
+                        method: "POST",
+                        body: fd,
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+
+                    if (data.status !== "success")
+                        throw new Error(data.message || "Unknown error");
+
+                    // — Fusion result pill —
+                    const pred = data.prediction;
+                    const pill = document.getElementById("resultPill");
+                    pill.textContent = pred;
+                    pill.className =
+                        "result-pill " +
+                        ({ Positive: "pos", Neutral: "neu", Negative: "neg" }[
+                            pred
+                        ] || "neu");
+                    document.getElementById("confText").textContent =
+                        "Confidence: " +
+                        (data.confidence * 100).toFixed(1) +
+                        "%";
+
+                    // — Text breakdown —
+                    const td = data.details.text_breakdown;
+                    setPct("tp", td.Positive);
+                    setBar("tp-bar", td.Positive);
+                    setPct("tn", td.Neutral);
+                    setBar("tn-bar", td.Neutral);
+                    setPct("tng", td.Negative);
+                    setBar("tng-bar", td.Negative);
+                    document.getElementById("text-pred").textContent =
+                        data.details.text_pred;
+
+                    // — Image breakdown —
+                    const id = data.details.image_breakdown;
+                    setPct("ip", id.Positive);
+                    setBar("ip-bar", id.Positive);
+                    setPct("in", id.Neutral);
+                    setBar("in-bar", id.Neutral);
+                    setPct("ing", id.Negative);
+                    setBar("ing-bar", id.Negative);
+                    document.getElementById("image-pred").textContent =
+                        data.details.image_pred;
+
+                    // — Fusion breakdown —
+                    const fd2 = data.fusion_breakdown;
+                    setPct("fp", fd2.Positive);
+                    setBar("fp-bar", fd2.Positive);
+                    setPct("fn", fd2.Neutral);
+                    setBar("fn-bar", fd2.Neutral);
+                    setPct("fng", fd2.Negative);
+                    setBar("fng-bar", fd2.Negative);
+                    document.getElementById("fusion-pred").textContent = pred;
+
+                    // — Matplotlib charts (nếu API trả về base64 PNG) —
+                    loadMplChart(
+                        "mpl-text",
+                        "mpl-text-img",
+                        data.chart_text_b64,
+                    );
+                    loadMplChart(
+                        "mpl-image",
+                        "mpl-image-img",
+                        data.chart_image_b64,
+                    );
+                    loadMplChart(
+                        "mpl-fusion",
+                        "mpl-fusion-img",
+                        data.chart_fusion_b64,
+                    );
+
+                    results.classList.remove("hidden");
+                    hideStatus();
+                    results.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                } catch (err) {
+                    showStatus(
+                        "Lỗi: " +
+                            err.message +
+                            ". Kiểm tra lại API URL và server.",
+                        "error",
+                    );
+                } finally {
+                    runBtn.disabled = false;
+                }
+            });
+        </script>
+    </body>
+</html>
